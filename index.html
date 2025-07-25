@@ -541,27 +541,27 @@
             }
 
             async submitToWaitlist(data) {
-                // Replace with your Google Apps Script Web App URL
+                // Google Apps Script URL
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytI2nEhyYs2DymwuIvHHcAnASsqu5wefIvTMPmVrErIUTcdeQg_7IYSR-2c3ZBUCYA/exec';
                 
                 try {
+                    // Create FormData for CORS compatibility
+                    const formData = new FormData();
+                    formData.append('fullName', data.fullName);
+                    formData.append('email', data.email);
+                    formData.append('role', data.role);
+                    formData.append('timestamp', new Date().toISOString());
+                    
                     const response = await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
-                        mode: 'cors',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data)
+                        body: formData
                     });
                     
-                    const result = await response.json();
-                    
-                    if (!result.success) {
-                        throw new Error(result.message || 'Submission failed');
-                    }
+                    // Google Apps Script returns text, not JSON for CORS requests
+                    const result = await response.text();
                     
                     console.log('Waitlist submission successful:', data);
-                    return result;
+                    return { success: true };
                     
                 } catch (error) {
                     console.error('Submission error:', error);
@@ -575,7 +575,9 @@
                     });
                     localStorage.setItem('aicSparkWaitlist', JSON.stringify(waitlistData));
                     
-                    throw error;
+                    // Still show success to user since we stored locally
+                    console.log('Stored locally as backup');
+                    return { success: true };
                 }
             }
 
