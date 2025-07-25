@@ -541,19 +541,42 @@
             }
 
             async submitToWaitlist(data) {
-                // Simulate API delay
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Replace with your Google Apps Script Web App URL
+                const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL_HERE';
                 
-                // Store in localStorage for demo purposes
-                const waitlistData = JSON.parse(localStorage.getItem('aicSparkWaitlist') || '[]');
-                waitlistData.push({
-                    ...data,
-                    timestamp: new Date().toISOString()
-                });
-                localStorage.setItem('aicSparkWaitlist', JSON.stringify(waitlistData));
-                
-                console.log('Waitlist submission:', data);
-                return Promise.resolve();
+                try {
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                        throw new Error(result.message || 'Submission failed');
+                    }
+                    
+                    console.log('Waitlist submission successful:', data);
+                    return result;
+                    
+                } catch (error) {
+                    console.error('Submission error:', error);
+                    
+                    // Fallback: Store in localStorage if Google Script fails
+                    const waitlistData = JSON.parse(localStorage.getItem('aicSparkWaitlist') || '[]');
+                    waitlistData.push({
+                        ...data,
+                        timestamp: new Date().toISOString(),
+                        status: 'pending_sync'
+                    });
+                    localStorage.setItem('aicSparkWaitlist', JSON.stringify(waitlistData));
+                    
+                    throw error;
+                }
             }
 
             setLoadingState(loading) {
