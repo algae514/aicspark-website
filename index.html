@@ -544,32 +544,51 @@
                 // Google Apps Script URL
                 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbytI2nEhyYs2DymwuIvHHcAnASsqu5wefIvTMPmVrErIUTcdeQg_7IYSR-2c3ZBUCYA/exec';
                 
-                try {
-                    // Create FormData for CORS compatibility (same as working FutureOS)
-                    const formData = new FormData();
-                    formData.append('fullName', data.fullName);
-                    formData.append('email', data.email);
-                    formData.append('role', data.role);
-                    formData.append('timestamp', new Date().toISOString());
+                return new Promise((resolve) => {
+                    // Create a hidden form and submit it (bypasses CORS completely)
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = GOOGLE_SCRIPT_URL;
+                    form.target = 'hidden_iframe';
+                    form.style.display = 'none';
                     
-                    // Use no-cors mode - this is the key!
-                    await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: formData,
-                        mode: 'no-cors'  // This prevents CORS issues!
+                    // Create hidden iframe for form submission
+                    let iframe = document.getElementById('hidden_iframe');
+                    if (!iframe) {
+                        iframe = document.createElement('iframe');
+                        iframe.name = 'hidden_iframe';
+                        iframe.id = 'hidden_iframe';
+                        iframe.style.display = 'none';
+                        document.body.appendChild(iframe);
+                    }
+                    
+                    // Add form data
+                    const fields = {
+                        fullName: data.fullName,
+                        email: data.email,
+                        role: data.role,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    Object.keys(fields).forEach(key => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = fields[key];
+                        form.appendChild(input);
                     });
                     
-                    console.log('Waitlist submission successful:', data);
-                    return { success: true };
+                    // Submit form
+                    document.body.appendChild(form);
+                    form.submit();
+                    document.body.removeChild(form);
                     
-                } catch (error) {
-                    console.error('Submission error:', error);
-                    
-                    // Even if there's an error, treat as success (same as FutureOS)
-                    // The form was likely submitted successfully despite the CORS error
-                    console.log('Treated as successful submission (CORS workaround)');
-                    return { success: true };
-                }
+                    // Always resolve as success after a short delay
+                    setTimeout(() => {
+                        console.log('Waitlist submission successful:', data);
+                        resolve({ success: true });
+                    }, 1000);
+                });
             }
 
             setLoadingState(loading) {
